@@ -133,6 +133,13 @@ function getUsageXml() {
 </item>`;
 }
 
+function getReminderCreationItemXML(context) {
+    return `<item uid="${Date.now()}" arg="${context.refs.list.id()} ${escapeXML(context.text)}">
+<title>${context.text}</title>
+<subtitle>Create new reminder in ${context.refs.list.name()}</subtitle>
+</item>`;
+}
+
 function createXML(items) {
     return `<?xml version="1.0"?>
 <items>
@@ -192,6 +199,49 @@ function usage() {
     return createXML([getUsageXml()]);
 }
 
+function search(app, context, aRef, lRef, rRef) {
+    var refs = context.refs;
+    var items = [];
+    each(rRef, function (x, i) {
+        var item = getReminderItemXml(x, context);
+        if (item) {
+            items.push(item);
+        }
+        return i < 5;
+    });
+    if (rRef && items.length === 0) {
+        items.push(getNoSuchItemIXml());
+    }
+    if (!rRef || refs.list) {
+        each(lRef, function (x) {
+            var item = getReminderListXml(x, context);
+            if (item) {
+                items.push(item);
+            }
+        });
+    }
+    if (!lRef && aRef) {
+        each(aRef, function (x) {
+            var item = getAccountXml(x);
+            if (item) {
+                items.push(item);
+            }
+        });
+    }
+    return createXML(items);
+}
+
+function create(app, context) {
+    var text = context.text.trim();
+    if (!text || "account".startsWith(text) || "list".startsWith(text)) {
+        return;
+    }
+    if (!context.refs.list) {
+        context.refs.list = app.defaultList;
+    }
+    return createXML([getReminderCreationItemXML(context)]);
+}
+
 function run(args) {
     if (args.length != 2 || !args[1]) {
         return usage();
@@ -199,7 +249,6 @@ function run(args) {
     var context = parseArgs(args);
     var app = Application("Reminders");
     var refs = context.refs;
-    var items = [];
     var reminderFinding = true;
 
     // Accounts
@@ -243,32 +292,13 @@ function run(args) {
                 { name: { _contains: context.text }}
             ]});
     }
-    each(rRef, function (x, i) {
-        var item = getReminderItemXml(x, context);
-        if (item) {
-            items.push(item);
-        }
-        return i < 5;
-    });
-    if (rRef && items.length === 0) {
-        items.push(getNoSuchItemIXml());
+
+    switch(context.command) {
+    case "search":
+        return search(app, context, aRef, lRef, rRef);
+    case "create":
+        return create(app, context);
+    default:
+        return;
     }
-    if (!rRef || refs.list) {
-        each(lRef, function (x) {
-            var item = getReminderListXml(x, context);
-            if (item) {
-                items.push(item);
-            }
-        });
-    }
-    if (!lRef && aRef) {
-        each(aRef, function (x) {
-            var item = getAccountXml(x);
-            if (item) {
-                items.push(item);
-            }
-        });
-    }
-    debug(context);
-    return createXML(items);
 }
