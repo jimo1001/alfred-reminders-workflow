@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>bundleid</key>
-	<string></string>
+	<string>com.github.jimo1001.alfred-reminders-workflow</string>
 	<key>category</key>
 	<string>Productivity</string>
 	<key>connections</key>
@@ -13,17 +13,6 @@
 			<dict>
 				<key>destinationuid</key>
 				<string>8D442CDC-AF96-4516-8A46-46CE55D66820</string>
-				<key>modifiers</key>
-				<integer>0</integer>
-				<key>modifiersubtext</key>
-				<string></string>
-			</dict>
-		</array>
-		<key>57722182-A73E-4453-89DC-48A4968B7C53</key>
-		<array>
-			<dict>
-				<key>destinationuid</key>
-				<string>822D49E4-4EAB-4563-945B-DA7580BB1B4F</string>
 				<key>modifiers</key>
 				<integer>0</integer>
 				<key>modifiersubtext</key>
@@ -45,11 +34,11 @@
 	<key>createdby</key>
 	<string>jimo1001</string>
 	<key>description</key>
-	<string></string>
+	<string>Search items from Reminders.app</string>
 	<key>disabled</key>
 	<false/>
 	<key>name</key>
-	<string>Reminders Controller</string>
+	<string>Reminders</string>
 	<key>objects</key>
 	<array>
 		<dict>
@@ -135,48 +124,6 @@
 			<key>version</key>
 			<integer>0</integer>
 		</dict>
-		<dict>
-			<key>config</key>
-			<dict>
-				<key>lastpathcomponent</key>
-				<false/>
-				<key>onlyshowifquerypopulated</key>
-				<false/>
-				<key>output</key>
-				<integer>0</integer>
-				<key>removeextension</key>
-				<false/>
-				<key>sticky</key>
-				<false/>
-				<key>text</key>
-				<string>{query}</string>
-				<key>title</key>
-				<string>Reminders</string>
-			</dict>
-			<key>type</key>
-			<string>alfred.workflow.output.notification</string>
-			<key>uid</key>
-			<string>822D49E4-4EAB-4563-945B-DA7580BB1B4F</string>
-			<key>version</key>
-			<integer>0</integer>
-		</dict>
-		<dict>
-			<key>config</key>
-			<dict>
-				<key>applescript</key>
-				<string>on alfred_script(q)
-  -- your script here
-end alfred_script</string>
-				<key>cachescript</key>
-				<false/>
-			</dict>
-			<key>type</key>
-			<string>alfred.workflow.action.applescript</string>
-			<key>uid</key>
-			<string>57722182-A73E-4453-89DC-48A4968B7C53</string>
-			<key>version</key>
-			<integer>0</integer>
-		</dict>
 	</array>
 	<key>readme</key>
 	<string></string>
@@ -186,16 +133,6 @@ end alfred_script</string>
 		<dict>
 			<key>ypos</key>
 			<real>10</real>
-		</dict>
-		<key>57722182-A73E-4453-89DC-48A4968B7C53</key>
-		<dict>
-			<key>ypos</key>
-			<real>130</real>
-		</dict>
-		<key>822D49E4-4EAB-4563-945B-DA7580BB1B4F</key>
-		<dict>
-			<key>ypos</key>
-			<real>130</real>
 		</dict>
 		<key>8D442CDC-AF96-4516-8A46-46CE55D66820</key>
 		<dict>
@@ -209,6 +146,6 @@ end alfred_script</string>
 		</dict>
 	</dict>
 	<key>webaddress</key>
-	<string></string>
+	<string>https://github.com/jimo1001/alfred-reminders-workflow</string>
 </dict>
 </plist>
