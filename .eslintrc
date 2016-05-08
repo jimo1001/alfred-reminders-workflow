@@ -1,0 +1,15 @@
+{
+  "extends": "eslint:recommended",
+  "parserOptions": {
+    "ecmaVersion": 6
+  },
+  "globals": {
+    "Application": true,
+    "console": true,
+    "ObjC": true,
+    "$": true
+  },
+  "rules": {
+    "no-console": 0
+  }
+}
