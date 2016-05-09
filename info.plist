@@ -66,11 +66,11 @@
 				<key>queuedelayimmediatelyinitially</key>
 				<true/>
 				<key>queuedelaymode</key>
-				<integer>0</integer>
-				<key>queuemode</key>
 				<integer>1</integer>
+				<key>queuemode</key>
+				<integer>2</integer>
 				<key>runningsubtext</key>
-				<string>Loading...</string>
+				<string>Searching reminders ...</string>
 				<key>script</key>
 				<string>osascript -l JavaScript input.applescript search "{query}"</string>
 				<key>subtext</key>
@@ -137,11 +137,11 @@
 				<key>keyword</key>
 				<string>r</string>
 				<key>queuedelaycustom</key>
-				<integer>3</integer>
+				<integer>1</integer>
 				<key>queuedelayimmediatelyinitially</key>
 				<true/>
 				<key>queuedelaymode</key>
-				<integer>0</integer>
+				<integer>2</integer>
 				<key>queuemode</key>
 				<integer>2</integer>
 				<key>runningsubtext</key>

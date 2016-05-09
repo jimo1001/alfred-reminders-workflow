@@ -4,6 +4,26 @@ function debug(o) {
     console.log(JSON.stringify(o));
 }
 
+function toArray(ref, propNames) {
+    if (!isArraySpecifier(ref)) {
+        return ref;
+    }
+    var array = [];
+    propNames.forEach(function (name, i) {
+        var _ref = ref;
+        name.split(".").forEach(function (s) {
+            _ref = _ref[s];
+        });
+        _ref().forEach(function (value, j) {
+            if (i === 0) {
+                array.push({});
+            }
+            array[j][name] = value;
+        });
+    });
+    return array;
+}
+
 function escapeXML(src) {
     if (!src) {
         return src;
@@ -74,18 +94,12 @@ function getPriorityLabel(priority) {
     return "!";
 }
 
-function toTitleCase(str) {
-    return str.replace(/\w\S*/g, function (txt) {
-        return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
-    });
-}
-
 function getAccountXml(props) {
     if (!props.id || !props.name) {
         return null;
     }
     var xName = escapeXML(wrap(props.name, '"'));
-    return `<item uid="${props.id}" arg="${props.id}" autocomplete="account:${xName}" valid="no">
+    return `<item arg="${props.id}" autocomplete="account:${xName}" valid="no">
 <title>Account: ${escapeXML(props.name)}</title>
 <subtitle>Select the account</subtitle>
 </item>`;
@@ -100,7 +114,7 @@ function getReminderListXml(props, context) {
     if (context.args.account) {
         autocomplete = "account:" + escapeXML(wrap(context.args.account, '"')) + " " + autocomplete;
     }
-    return `<item uid="${props.id}" arg="${props.id}" autocomplete="${autocomplete}">
+    return `<item arg="${props.id}" autocomplete="${autocomplete}">
 <title>List: ${escapeXML(props.name)}</title>
 <subtitle>Open the reminder&apos;s list in Remainders.app</subtitle>
 </item>`;
@@ -110,19 +124,11 @@ function getReminderItemXml(props, ccontex) {
     if (!props.id || !props.name) {
         return null;
     }
-    var xName = escapeXML(wrap(props.name, '"'));
-    var listName = props.container ? props.container.name() : null;
+    var listName = props["container.name"];
     var dateStr = formatDateTimeString(props.creationDate);
-    return `<item uid="${props.id}" arg="${props.id}" autocomplete="${xName}">
+    return `<item arg="${props.id}">
 <title>${escapeXML(props.name)}</title>
-<subtitle>${getPriorityLabel(props.priority)} ${toTitleCase(props.pcls)}: created at ${dateStr} (${listName})</subtitle>
-</item>`;
-}
-
-function getNoSuchItemIXml() {
-    return `<item>
-<title>No such item</title>
-<subtitle></subtitle>
+<subtitle>${getPriorityLabel(props.priority)} Reminder: created at ${dateStr} (${listName})</subtitle>
 </item>`;
 }
 
@@ -134,7 +140,7 @@ function getUsageXml() {
 }
 
 function getReminderCreationItemXML(context) {
-    return `<item uid="${Date.now()}" arg="${context.refs.list.id()} ${escapeXML(context.text)}">
+    return `<item arg="${context.refs.list.id()} ${escapeXML(context.text)}">
 <title>${context.text}</title>
 <subtitle>Create new reminder in ${context.refs.list.name()}</subtitle>
 </item>`;
@@ -200,20 +206,17 @@ function usage() {
 }
 
 function search(app, context, aRef, lRef, rRef) {
-    var refs = context.refs;
     var items = [];
-    each(rRef, function (x, i) {
-        var item = getReminderItemXml(x, context);
-        if (item) {
-            items.push(item);
-        }
-        return i < 5;
-    });
-    if (rRef && items.length === 0) {
-        items.push(getNoSuchItemIXml());
+    if (rRef) {
+        toArray(rRef, ["id", "name", "priority", "creationDate", "container.name"]).forEach(function (x) {
+            var item = getReminderItemXml(x, context);
+            if (item) {
+                items.push(item);
+            }
+        });
     }
-    if (!rRef || refs.list) {
-        each(lRef, function (x) {
+    if (!rRef && lRef) {
+        toArray(lRef, ["id", "name"]).forEach(function (x) {
             var item = getReminderListXml(x, context);
             if (item) {
                 items.push(item);
@@ -221,7 +224,7 @@ function search(app, context, aRef, lRef, rRef) {
         });
     }
     if (!lRef && aRef) {
-        each(aRef, function (x) {
+        toArray(aRef, ["id", "name"]).forEach(function (x) {
             var item = getAccountXml(x);
             if (item) {
                 items.push(item);
@@ -282,20 +285,20 @@ function run(args) {
     if (lRef && lRef.length === 1) {
         refs.list = lRef[0];
     }
-    // Reminders
-    var rRef = null;
-    if (reminderFinding && context.text) {
-        rRef = refs.list ? refs.list.reminders : app.defaultList.reminders;
-        rRef = rRef.whose({
-            _and: [
-                { completed: false },
-                { name: { _contains: context.text }}
-            ]});
-    }
-
     switch(context.command) {
-    case "search":
+    case "search": {
+        // Reminders
+        var rRef = null;
+        if (reminderFinding && context.text) {
+            rRef = refs.list ? refs.list.reminders : app.defaultList.reminders;
+            rRef = rRef.whose({
+                _and: [
+                    { completed: false },
+                    { name: { _contains: context.text }}
+                ]});
+        }
         return search(app, context, aRef, lRef, rRef);
+    }
     case "create":
         return create(app, context);
     default:
