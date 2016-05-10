@@ -64,7 +64,7 @@
 				<key>queuedelaycustom</key>
 				<integer>3</integer>
 				<key>queuedelayimmediatelyinitially</key>
-				<true/>
+				<false/>
 				<key>queuedelaymode</key>
 				<integer>1</integer>
 				<key>queuemode</key>
@@ -72,7 +72,7 @@
 				<key>runningsubtext</key>
 				<string>Searching reminders ...</string>
 				<key>script</key>
-				<string>osascript -l JavaScript input.applescript search "{query}"</string>
+				<string>osascript -l JavaScript ./input.applescript search "{query}"</string>
 				<key>subtext</key>
 				<string>r [account:{Account Name}] [list:{List Name}] {Search Words}</string>
 				<key>title</key>
@@ -139,7 +139,7 @@
 				<key>queuedelaycustom</key>
 				<integer>1</integer>
 				<key>queuedelayimmediatelyinitially</key>
-				<true/>
+				<false/>
 				<key>queuedelaymode</key>
 				<integer>2</integer>
 				<key>queuemode</key>
@@ -147,7 +147,7 @@
 				<key>runningsubtext</key>
 				<string>Loading...</string>
 				<key>script</key>
-				<string>osascript -l JavaScript input.applescript create "{query}"</string>
+				<string>osascript -l JavaScript ./input.applescript create "{query}"</string>
 				<key>subtext</key>
 				<string>r [account:{Account Name}] [list:{List Name}] {Title Text}</string>
 				<key>title</key>

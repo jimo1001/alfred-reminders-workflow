@@ -1,10 +1,6 @@
 // -*- coding: utf-8; mode: js2 -*-
 
-function debug(o) {
-    console.log(JSON.stringify(o));
-}
-
-function toArray(ref, propNames) {
+function getPropertiesFromArraySpecifier(ref, propNames) {
     if (!isArraySpecifier(ref)) {
         return ref;
     }
@@ -37,24 +33,6 @@ function escapeXML(src) {
 
 function isArraySpecifier(o) {
     return o && o.toString() === "[object ArraySpecifier]";
-}
-
-function each(xs, fn) {
-    if (!xs || typeof fn !== "function") {
-        return;
-    }
-    var isRef = isArraySpecifier(xs);
-    var props;
-    for (var i = 0, len = xs.length; i < len; i++) {
-        if (isRef) {
-            props = xs[i].properties();
-        } else {
-            props = xs[i];
-        }
-        if (fn.apply(xs, [props, i]) === false) {
-            break;
-        }
-    }
 }
 
 function wrap(str, wrapWith) {
@@ -156,7 +134,7 @@ ${items.join("\n")}
 // parse command line arguments
 function parseArgs(args) {
     var context = {
-        command: "show",
+        command: "search",
         text: "",
         args: {
             account: "",
@@ -208,7 +186,9 @@ function usage() {
 function search(app, context, aRef, lRef, rRef) {
     var items = [];
     if (rRef) {
-        toArray(rRef, ["id", "name", "priority", "creationDate", "container.name"]).forEach(function (x) {
+        getPropertiesFromArraySpecifier(rRef, [
+            "id", "name", "priority", "creationDate", "container.name"
+        ]).forEach(function (x) {
             var item = getReminderItemXml(x, context);
             if (item) {
                 items.push(item);
@@ -216,7 +196,7 @@ function search(app, context, aRef, lRef, rRef) {
         });
     }
     if (!rRef && lRef) {
-        toArray(lRef, ["id", "name"]).forEach(function (x) {
+        getPropertiesFromArraySpecifier(lRef, ["id", "name"]).forEach(function (x) {
             var item = getReminderListXml(x, context);
             if (item) {
                 items.push(item);
@@ -224,7 +204,7 @@ function search(app, context, aRef, lRef, rRef) {
         });
     }
     if (!lRef && aRef) {
-        toArray(aRef, ["id", "name"]).forEach(function (x) {
+        getPropertiesFromArraySpecifier(aRef, ["id", "name"]).forEach(function (x) {
             var item = getAccountXml(x);
             if (item) {
                 items.push(item);
@@ -291,11 +271,11 @@ function run(args) {
         var rRef = null;
         if (reminderFinding && context.text) {
             rRef = refs.list ? refs.list.reminders : app.defaultList.reminders;
-            rRef = rRef.whose({
-                _and: [
-                    { completed: false },
-                    { name: { _contains: context.text }}
-                ]});
+            var criteria = [{ completed: false }];
+            context.text.split(" ").forEach(function (word) {
+                criteria.push({ name: { _contains: word }});
+            });
+            rRef = rRef.whose({_and: criteria});
         }
         return search(app, context, aRef, lRef, rRef);
     }
