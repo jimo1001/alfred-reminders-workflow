@@ -67,9 +67,9 @@ function getPriorityLabel(priority) {
         return "!!!";
     }
     if (priority < 7) {
-        return "!!";
+        return " !!";
     }
-    return "!";
+    return "  !";
 }
 
 function getAccountXml(props) {
@@ -165,7 +165,7 @@ function parseArgs(args) {
             return true;
         });
         if (!parsing) {
-            context.text = target;
+            context.text = target.trim();
         }
     }
     args.forEach(function (arg, i) {
@@ -188,9 +188,11 @@ function search(app, context, aRef, lRef, rRef) {
     if (rRef) {
         getPropertiesFromArraySpecifier(rRef, [
             "id", "name", "priority", "creationDate", "container.name"
-        ]).forEach(function (x) {
+        ]).sort(function (a, b) {
+            return a.priority - b.priority;
+        }).forEach(function (x) {
             var item = getReminderItemXml(x, context);
-            if (item) {
+             if (item) {
                 items.push(item);
             }
         });
@@ -242,7 +244,7 @@ function run(args) {
                 _beginsWith: context.args.account
             }
         });
-    } else if ("account".startsWith(context.text)) {
+    } else if (context.text && "account".startsWith(context.text)) {
         aRef = app.accounts;
         reminderFinding = false;
     }
@@ -258,7 +260,7 @@ function run(args) {
                 _beginsWith: context.args.list
             }
         });
-    } else if ("list".startsWith(context.text)) {
+    } else if (context.text && "list".startsWith(context.text)) {
         lRef = refs.account ? refs.account.lists : app.lists;
         reminderFinding = false;
     }
@@ -269,13 +271,20 @@ function run(args) {
     case "search": {
         // Reminders
         var rRef = null;
-        if (reminderFinding && context.text) {
+        if (reminderFinding) {
             rRef = refs.list ? refs.list.reminders : app.defaultList.reminders;
-            var criteria = [{ completed: false }];
-            context.text.split(" ").forEach(function (word) {
-                criteria.push({ name: { _contains: word }});
-            });
-            rRef = rRef.whose({_and: criteria});
+            var criteria = [{completed: false}];
+            if (context.text) {
+                context.text.split(" ").forEach(function (word) {
+                    criteria.push({ name: { _contains: word }});
+                });
+            }
+            if (criteria.length ===  1) {
+                criteria = criteria[0];
+            } else {
+                criteria = {_and: criteria};
+            }
+            rRef = rRef.whose(criteria);
         }
         return search(app, context, aRef, lRef, rRef);
     }
