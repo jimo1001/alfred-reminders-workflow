@@ -98,7 +98,7 @@ function getReminderListXml(props, context) {
 </item>`;
 }
 
-function getReminderItemXml(props, ccontex) {
+function getReminderItemXml(props) {
     if (!props.id || !props.name) {
         return null;
     }
