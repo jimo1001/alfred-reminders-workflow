@@ -146,11 +146,11 @@ class AlredWorkflowReminder {
 
 func parseArgs(args: [String]) -> Context {
     var ctx = Context()
-    for (index, arg) in args.enumerate() {
-        if index == 0 {
+    for (i, arg) in args.enumerate() {
+        if i == 0 {
             continue
         }
-        if index == 1 {
+        if i == 1 {
             switch arg.lowercaseString {
             case "search":
                 ctx.command = CommandType.Search
@@ -164,57 +164,63 @@ func parseArgs(args: [String]) -> Context {
             continue
         }
         var tmp: String = ""
-        var key = ""
+        var key: String = ""
         var quote = false
-        for c in arg.characters {
+        let chars = arg.characters
+        let len = chars.count
+        for (j, c) in chars.enumerate() {
+            let isLast = (j == len - 1)
             if c == "\"" {
                 if !quote {
                     quote = true
+                    continue
                 }
                 switch key {
                 case "account":
                     key = ""
-                    ctx.argAccount = tmp
+                    ctx.argAccount = tmp.lowercaseString
                     break
                 case "list":
                     key = ""
-                    ctx.argList = tmp
+                    ctx.argList = tmp.lowercaseString
                     break
                 default:
-                    ctx.words.append(tmp)
+                    ctx.words.append(tmp.lowercaseString)
+                    break
                 }
                 tmp = ""
+                quote = false
                 continue
             }
-            if !quote && c == " " {
+            if isLast {
+                tmp.append(c)
+            }
+            if !quote && (c == " " || isLast) {
                 switch key {
                 case "account":
                     key = ""
-                    ctx.argAccount = tmp
+                    ctx.argAccount = tmp.lowercaseString
                     break
                 case "list":
                     key = ""
-                    ctx.argList = tmp
+                    ctx.argList = tmp.lowercaseString
                     break
                 default:
-                    ctx.words.append(tmp)
+                    ctx.words.append(tmp.lowercaseString)
                 }
                 tmp = ""
                 continue
             }
             tmp.append(c)
             if tmp.hasPrefix("account:") {
-                key = "acount"
+                key = "account"
                 tmp = ""
                 continue
             }
             if tmp.hasPrefix("list:") {
-                key = "list:"
+                key = "list"
                 tmp = ""
             }
-        }
-        if key == "" && tmp != "" && !arg.hasSuffix("\"") {
-            ctx.words.append(tmp)
         }
         ctx.argRaw = arg
     }
