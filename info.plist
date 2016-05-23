@@ -45,18 +45,18 @@
 	<key>createdby</key>
 	<string>jimo1001</string>
 	<key>description</key>
-	<string>Search items from Reminders.app</string>
+	<string>For Reminders.app</string>
 	<key>disabled</key>
 	<false/>
 	<key>name</key>
-	<string>Reminders</string>
+	<string>Simple Reminders</string>
 	<key>objects</key>
 	<array>
 		<dict>
 			<key>config</key>
 			<dict>
 				<key>argumenttype</key>
-				<integer>0</integer>
+				<integer>1</integer>
 				<key>escaping</key>
 				<integer>102</integer>
 				<key>keyword</key>
@@ -72,7 +72,7 @@
 				<key>runningsubtext</key>
 				<string>Searching reminders ...</string>
 				<key>script</key>
-				<string>build/Release/aw-input search "{query}"</string>
+				<string>bin/aw-input search "{query}"</string>
 				<key>subtext</key>
 				<string>r [account:{Account Name}] [list:{List Name}] {Search Words}</string>
 				<key>title</key>
@@ -97,7 +97,7 @@
 				<key>escaping</key>
 				<integer>127</integer>
 				<key>script</key>
-				<string>osascript -l JavaScript -s o open.applescript "{query}"</string>
+				<string>osascript -l JavaScript -s o scripts/open.applescript "{query}"</string>
 				<key>type</key>
 				<integer>0</integer>
 			</dict>
@@ -116,7 +116,7 @@
 				<key>escaping</key>
 				<integer>102</integer>
 				<key>script</key>
-				<string>osascript -l JavaScript -s o create.applescript "{query}"</string>
+				<string>osascript -l JavaScript -s o scripts/create.applescript "{query}"</string>
 				<key>type</key>
 				<integer>0</integer>
 			</dict>
@@ -143,11 +143,11 @@
 				<key>queuedelaymode</key>
 				<integer>0</integer>
 				<key>queuemode</key>
-				<integer>1</integer>
+				<integer>2</integer>
 				<key>runningsubtext</key>
 				<string>Loading...</string>
 				<key>script</key>
-				<string>osascript -l JavaScript -s o input.applescript create "{query}"</string>
+				<string>bin/aw-input create "{query}"</string>
 				<key>subtext</key>
 				<string>r [account:{Account Name}] [list:{List Name}] {Title Text}</string>
 				<key>title</key>
@@ -191,7 +191,7 @@
 		</dict>
 	</array>
 	<key>readme</key>
-	<string></string>
+	<string>Please see https://github.com/jimo1001/alfred-reminders-workflow</string>
 	<key>uidata</key>
 	<dict>
 		<key>391573B1-198D-4455-A25B-CC9763DF6C18</key>

@@ -3,7 +3,7 @@
 //  alfred-reminders-workflow
 //
 //  Created by jimo1001 on 2016/05/17.
-//  Copyright © 2016年 jimo1001. All rights reserved.
+//  Copyright (c) 2016 jimo1001. All rights reserved.
 //
 
 import Foundation
@@ -47,6 +47,10 @@ func formatDate(date: NSDate) -> String {
     return formatter.stringFromDate(date)
 }
 
+func trim(text: String) -> String {
+    return text.stringByTrimmingCharactersInSet(NSCharacterSet.whitespaceCharacterSet())
+}
+
 func getPriorityLabel(priority: Int) -> String {
     switch priority {
     case 1 ... 4:
@@ -61,23 +65,21 @@ func getPriorityLabel(priority: Int) -> String {
     return "   "
 }
 
-class AlredWorkflowReminder {
+class AlfredWorkflowReminder {
     var store: EKEventStore
     var context: Context
 
     init(ctx: Context) {
         store = EKEventStore()
         context = ctx
-
         if context.argAccount != "" {
-            let accounts = getAccounts(context.argAccount)
+            let accounts = getAccountsByName(context.argAccount)
             if accounts.count > 0 {
                 context.account = accounts[0]
             }
         }
-
         if context.argList != "" {
-            let lists = getLists(context.argList)
+            let lists = getListsByName(context.argList)
             if lists.count > 0 {
                 context.list = lists[0]
             }
@@ -101,6 +103,8 @@ class AlredWorkflowReminder {
         var calendars: [EKCalendar]? = nil
         if context.list != nil {
             calendars = [context.list!]
+        } else {
+            calendars = getAllLists()
         }
         var reminders: [EKReminder] = []
         let dsema : dispatch_semaphore_t = dispatch_semaphore_create(0)
@@ -123,24 +127,43 @@ class AlredWorkflowReminder {
         return reminders
     }
 
-    func getAccounts() -> [EKSource] {
+    func getAllAccounts() -> [EKSource] {
         return store.sources
     }
 
-    func getAccounts(name: String) -> [EKSource] {
-        return getAccounts().filter({(source: EKSource) -> Bool in
-            return source.title.lowercaseString.hasPrefix(name)
+    func getAccountsByName(name: String) -> [EKSource] {
+        return getAllAccounts().filter({(source: EKSource) -> Bool in
+            return source.title.lowercaseString.hasPrefix(name.lowercaseString)
+        })
+    }
+    
+    func getSelectedAccount() -> EKSource {
+        if self.context.account != nil {
+            return self.context.account!
+        }
+        return getAllAccounts()[0]
+    }
+
+    func getAllLists() -> [EKCalendar] {
+        return store.calendarsForEntityType(EKEntityType.Reminder).filter({(cal: EKCalendar) -> Bool in
+            if self.context.account != nil && cal.source != self.context.account {
+                return false
+            }
+            return true
         })
     }
 
-    func getLists() -> [EKCalendar] {
-        return store.calendarsForEntityType(EKEntityType.Reminder)
-    }
-
-    func getLists(name: String) -> [EKCalendar] {
-        return getLists().filter({(cal: EKCalendar) -> Bool in
-             return cal.title.lowercaseString.hasPrefix(name)
+    func getListsByName(name: String) -> [EKCalendar] {
+        return getAllLists().filter({(cal: EKCalendar) -> Bool in
+            return cal.title.lowercaseString.hasPrefix(name)
         })
+    }
+    
+    func getSelectedList() -> EKCalendar {
+        if self.context.list != nil {
+            return self.context.list!
+        }
+        return self.store.defaultCalendarForNewReminders()
     }
 }
 
@@ -196,6 +219,10 @@ func parseArgs(args: [String]) -> Context {
                 tmp.append(c)
             }
             if !quote && (c == " " || isLast) {
+                tmp = trim(tmp)
+                if tmp == "" {
+                    continue
+                }
                 switch key {
                 case "account":
                     key = ""
@@ -227,14 +254,13 @@ func parseArgs(args: [String]) -> Context {
     return ctx
 }
 
-func run(args: [String]) -> Int32 {
-    let ctx = parseArgs(args)
-    let awReminder = AlredWorkflowReminder(ctx: ctx)
+func getSearchXMLDocument(ctx: Context) -> NSXMLDocument? {
+    let awReminder = AlfredWorkflowReminder(ctx: ctx)
     let root = NSXMLElement(name: "items")
     let xml = NSXMLDocument(rootElement: root)
     // Account
     if ctx.words.count > 0 && "account".hasPrefix(ctx.words.last!) {
-        for account in awReminder.getAccounts() {
+        for account in awReminder.getAllAccounts() {
             let item = NSXMLElement(name: "item")
             item.addAttribute(
                 NSXMLNode.attributeWithName("autocomplete", stringValue: "account:\"\(account.title)\"") as! NSXMLNode
@@ -249,16 +275,20 @@ func run(args: [String]) -> Int32 {
             root.addChild(item)
         }
     }
-    
     // List
     if ctx.words.count > 0 && "list".hasPrefix(ctx.words.last!) {
-        for list in awReminder.getLists() {
+        for list in awReminder.getAllLists() {
             let item = NSXMLElement(name: "item")
             item.addAttribute(
                 NSXMLNode.attributeWithName("arg", stringValue: list.calendarIdentifier) as! NSXMLNode
             )
+            var autocomplete: String = ""
+            if awReminder.context.account != nil {
+                autocomplete = "account:\"\(awReminder.context.account!.title)\" "
+            }
+            autocomplete += "list:\"\(list.title)\""
             item.addAttribute(
-                NSXMLNode.attributeWithName("autocomplete", stringValue: "list:\"\(list.title)\"") as! NSXMLNode
+                NSXMLNode.attributeWithName("autocomplete", stringValue: autocomplete) as! NSXMLNode
             )
             item.addChild(NSXMLElement(name: "title", stringValue: "List: \(list.title)"))
             item.addChild(NSXMLElement(
@@ -267,7 +297,6 @@ func run(args: [String]) -> Int32 {
             root.addChild(item)
         }
     }
-
     // Reminders
     if root.childCount == 0 {
         for reminder in awReminder.getIncompleteReminders() {
@@ -282,8 +311,45 @@ func run(args: [String]) -> Int32 {
             root.addChild(item)
         }
     }
-    print(xml.XMLString)
-    return 0
+    return xml
+}
+
+func getCreationXMLDocument(ctx: Context) -> NSXMLDocument? {
+    if ctx.words.count == 0 || ctx.words[0] == "" {
+        return nil
+    }
+    let awReminder = AlfredWorkflowReminder(ctx: ctx)
+    let root = NSXMLElement(name: "items")
+    let xml = NSXMLDocument(rootElement: root)
+    let item = NSXMLElement(name: "item")
+    let list = awReminder.getSelectedList()
+    let text = ctx.words.joinWithSeparator(" ")
+    item.addAttribute(
+        NSXMLNode.attributeWithName("arg", stringValue: "\(list.calendarIdentifier) \(text)") as! NSXMLNode
+    )
+    item.addChild(NSXMLElement(name: "title", stringValue: text))
+    item.addChild(NSXMLElement(name: "subtitle", stringValue: "Create a new task in \(list.title)"))
+    item.addChild(NSXMLElement(name: "icon", stringValue: "icon_add.png"))
+    root.addChild(item)
+    return xml
+}
+
+func run(args: [String]) -> Int32 {
+    let ctx = parseArgs(args)
+    var xml: NSXMLDocument? = nil
+    switch ctx.command {
+    case CommandType.Search:
+        xml = getSearchXMLDocument(ctx)
+        break
+    case CommandType.Create:
+        xml = getCreationXMLDocument(ctx)
+        break
+    }
+    if xml != nil {
+        print(xml!.XMLString)
+        return 0
+    }
+    return 1
 }
 
 exit(run(Process.arguments))
