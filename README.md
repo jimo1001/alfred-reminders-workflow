@@ -3,6 +3,7 @@
 
 You can search tasks of Reminders.app.
 
+![video](http://www.packal.org/sites/default/files/public/workflow-files/comgithubjimo1001alfred-reminders-workflow/screenshots/screencast.gif)
 
 ## Installation
 
