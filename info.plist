@@ -70,11 +70,11 @@
 				<key>queuemode</key>
 				<integer>2</integer>
 				<key>runningsubtext</key>
-				<string>Searching reminders ...</string>
+				<string>Search in progress ...</string>
 				<key>script</key>
 				<string>bin/aw-input search "{query}"</string>
 				<key>subtext</key>
-				<string>r [account:{Account Name}] [list:{List Name}] {Search Words}</string>
+				<string>r [account:{Account Name} list:{List Name}] {Search Words...}</string>
 				<key>title</key>
 				<string>Search reminder's items</string>
 				<key>type</key>
@@ -145,11 +145,11 @@
 				<key>queuemode</key>
 				<integer>2</integer>
 				<key>runningsubtext</key>
-				<string>Loading...</string>
+				<string>Please Wait ...</string>
 				<key>script</key>
 				<string>bin/aw-input create "{query}"</string>
 				<key>subtext</key>
-				<string>r [account:{Account Name}] [list:{List Name}] {Title Text}</string>
+				<string>r [account:{Account Name} list:{List Name}] {Task Title ...}</string>
 				<key>title</key>
 				<string>Create a new item</string>
 				<key>type</key>

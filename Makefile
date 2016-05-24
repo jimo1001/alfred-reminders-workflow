@@ -1,5 +1,5 @@
 name = alfred-reminders-workflow
-version = 0.4
+version = 0.5
 
 all: package
 
@@ -8,7 +8,7 @@ build:
 
 package: build
 	mkdir -p build/_package/bin
-	cp -rv *.png LICENSE Makefile README.md aw-input aw-input.xcodeproj info.plist scripts build/_package/
+	cp -rv *.png images LICENSE Makefile README.md info.plist scripts build/_package/
 	cp -v build/Release/aw-input build/_package/bin/
 	cd build/_package && zip -r ../$(name)-$(version).alfredworkflow *
 
