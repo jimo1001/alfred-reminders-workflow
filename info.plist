@@ -74,7 +74,7 @@
 				<key>script</key>
 				<string>bin/aw-input search "{query}"</string>
 				<key>subtext</key>
-				<string>r [account:{Account Name} list:{List Name}] {Search Words...}</string>
+				<string>r [ac:{Account Name} ls:{List Name}] {Search Words...}</string>
 				<key>title</key>
 				<string>Search reminder's items</string>
 				<key>type</key>
@@ -149,7 +149,7 @@
 				<key>script</key>
 				<string>bin/aw-input create "{query}"</string>
 				<key>subtext</key>
-				<string>r [account:{Account Name} list:{List Name}] {Task Title ...}</string>
+				<string>r [ac:{Account Name} ls:{List Name}] {Task Title ...}</string>
 				<key>title</key>
 				<string>Create a new item</string>
 				<key>type</key>

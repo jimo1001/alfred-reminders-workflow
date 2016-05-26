@@ -1,19 +1,19 @@
 
 # Simple Reminders Workflow for Alfred 2, 3
 
-You can search tasks of Reminders.app.
+You can search (or create) reminders in Reminders.app.
 
 ![video](http://www.packal.org/sites/default/files/public/workflow-files/comgithubjimo1001alfred-reminders-workflow/screenshots/screencast.gif)
 
 ## Installation
 
-Please download package(`*.alfredworkflow`) from [Latest Release](https://github.com/jimo1001/alfred-reminders-workflow/releases/latest) or [Packal](http://www.packal.org/workflow/simple-reminders)
+Please download a package(`*.alfredworkflow`) from the [Latest Release](https://github.com/jimo1001/alfred-reminders-workflow/releases/latest) or [Packal](http://www.packal.org/workflow/simple-reminders)
 
 ## Usage
 
-- Search Tasks
+- Search/Display reminders
   - `r {Search Words}`
-  - `r list:{List Name} {Search Words}`
-  - `r account:{Account Name} list:{List Name} {Search Words}`
-- Create a New Task
-  - `r account:{AccountName} list:{List Name} {Task Title}`
+  - `r ls:{List Name} {Search Words}`
+  - `r ac:{Account Name} ls:{List Name} {Search Words}`
+- Create a new reminder
+  - `r ac:{Account Name} ls:{List Name} {Reminder's Title}`

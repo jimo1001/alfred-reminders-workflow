@@ -56,14 +56,28 @@ func trim(text: String) -> String {
     return text.stringByTrimmingCharactersInSet(NSCharacterSet.whitespaceCharacterSet())
 }
 
+func matchRegex(pattern: String, input: String, options: NSRegularExpressionOptions?) -> [String] {
+    let options_: NSRegularExpressionOptions = options != nil ? options! : NSRegularExpressionOptions.CaseInsensitive
+    do {
+        let re = try NSRegularExpression(pattern: pattern, options: options_)
+        let nsInput = input as NSString
+        let match = re.matchesInString(input, options: [], range: NSMakeRange(0, nsInput.length))
+        return match.map({ (res) -> String in
+            return nsInput.substringWithRange(res.range)
+        })
+    } catch _ as NSError {
+        return []
+    }
+}
+
 func getPriorityLabel(priority: Int) -> String {
     switch priority {
     case 1 ... 4:
         return "!!!"
     case 5:
-        return " !!"
+        return "!! "
     case 6 ... 9:
-        return "  !"
+        return "!  "
     default:
         break
     }
@@ -75,15 +89,15 @@ class AlfredWorkflowReminder {
     var context: Context
 
     init(ctx: Context) {
-        store = EKEventStore()
-        context = ctx
-        if context.argAccount != "" {
+        self.store = EKEventStore()
+        self.context = ctx
+        if !context.argAccount.isEmpty {
             let accounts = getAccountsByName(context.argAccount)
             if accounts.count > 0 {
-                context.account = accounts[0]
+                self.context.account = accounts[0]
             }
         }
-        if context.argList != "" {
+        if !context.argList.isEmpty {
             let lists = getListsByName(context.argList)
             if lists.count > 0 {
                 context.list = lists[0]
@@ -92,9 +106,12 @@ class AlfredWorkflowReminder {
     }
 
     func requestAccessForReminder() -> Bool {
+        if EKEventStore.authorizationStatusForEntityType(EKEntityType.Reminder) == EKAuthorizationStatus.Authorized {
+            return true
+        }
         let dsema : dispatch_semaphore_t = dispatch_semaphore_create(0)
         var ok = false
-        store.requestAccessToEntityType(EKEntityType.Reminder) {(granted: Bool, err: NSError?) -> Void in
+        store.requestAccessToEntityType(EKEntityType.Reminder) { (granted: Bool, err: NSError?) -> Void in
             if granted {
                 ok = true
             }
@@ -114,14 +131,17 @@ class AlfredWorkflowReminder {
         var reminders: [EKReminder] = []
         let dsema : dispatch_semaphore_t = dispatch_semaphore_create(0)
         let predicate = store.predicateForIncompleteRemindersWithDueDateStarting(nil, ending: nil, calendars: calendars)
-        store.fetchRemindersMatchingPredicate(predicate, completion: {(rs) -> Void in
+        store.fetchRemindersMatchingPredicate(predicate, completion: { (rs) -> Void in
             if rs != nil {
                 if self.context.words.count == 0 {
                     reminders = rs!
                 } else {
-                    reminders = rs!.filter({(r: EKReminder) -> Bool in
-                        return !self.context.words.map({(w: String) -> Bool in
-                            return r.title.lowercaseString.containsString(w.lowercaseString)
+                    reminders = rs!.filter({ (r: EKReminder) -> Bool in
+                        return !self.context.words.map({ (w: String) -> Bool in
+                            let wl = w.lowercaseString
+                            return (r.title.lowercaseString.containsString(wl)
+                                || r.calendar.title.lowercaseString.containsString(wl)
+                                || r.calendar.source.title.lowercaseString.containsString(wl))
                         }).contains(false)
                     })
                 }
@@ -129,7 +149,31 @@ class AlfredWorkflowReminder {
             dispatch_semaphore_signal(dsema)
         })
         dispatch_semaphore_wait(dsema, DISPATCH_TIME_FOREVER)
-        return reminders
+
+        // Sort by 1: Priority, 2: DueDate, 3: CreationDate
+        return reminders.sort({ (a: EKReminder, b: EKReminder) -> Bool in
+            // Priority
+            if a.priority != b.priority {
+                return (a.priority == 0 ? 10 : b.priority) < (b.priority == 0 ? 10 : b.priority)
+            }
+            // DueDate
+            if a.dueDateComponents != nil {
+                if b.dueDateComponents != nil {
+                    let cal = NSCalendar(calendarIdentifier: NSCalendarIdentifierGregorian)!
+                    let da = cal.dateFromComponents(a.dueDateComponents!)!
+                    let db = cal.dateFromComponents(b.dueDateComponents!)!
+                    if (da.compare(db) == NSComparisonResult.OrderedAscending) {
+                        return true
+                    }
+                } else {
+                    return true
+                }
+            } else if b.dueDateComponents != nil {
+                return false
+            }
+            // CreationDate
+            return a.creationDate!.compare(b.creationDate!) == NSComparisonResult.OrderedAscending
+        })
     }
 
     func getAllAccounts() -> [EKSource] {
@@ -137,11 +181,11 @@ class AlfredWorkflowReminder {
     }
 
     func getAccountsByName(name: String) -> [EKSource] {
-        return getAllAccounts().filter({(source: EKSource) -> Bool in
+        return getAllAccounts().filter({ ( source: EKSource) -> Bool in
             return source.title.lowercaseString.hasPrefix(name.lowercaseString)
         })
     }
-    
+
     func getSelectedAccount() -> EKSource {
         if self.context.account != nil {
             return self.context.account!
@@ -150,7 +194,7 @@ class AlfredWorkflowReminder {
     }
 
     func getAllLists() -> [EKCalendar] {
-        return store.calendarsForEntityType(EKEntityType.Reminder).filter({(cal: EKCalendar) -> Bool in
+        return store.calendarsForEntityType(EKEntityType.Reminder).filter({ (cal: EKCalendar) -> Bool in
             if self.context.account != nil && cal.source != self.context.account {
                 return false
             }
@@ -159,14 +203,16 @@ class AlfredWorkflowReminder {
     }
 
     func getListsByName(name: String) -> [EKCalendar] {
-        return getAllLists().filter({(cal: EKCalendar) -> Bool in
-            return cal.title.lowercaseString.hasPrefix(name)
+        return getAllLists().filter({ (cal: EKCalendar) -> Bool in
+            return cal.title.lowercaseString.hasPrefix(name.lowercaseString)
         })
     }
-    
-    func getSelectedList() -> EKCalendar {
+
+    func getSelectedList() -> EKCalendar? {
         if self.context.list != nil {
-            return self.context.list!
+            return self.context.list
+        } else if self.context.account != nil {
+            return self.getAllLists().first
         }
         return self.store.defaultCalendarForNewReminders()
     }
@@ -230,12 +276,12 @@ func parseArgs(args: [String]) -> Context {
                 continue
             }
             tmp.append(c)
-            if tmp.lowercaseString.hasPrefix("account:") {
+            if tmp.lowercaseString.hasPrefix("ac:") {
                 key = "account"
                 tmp = ""
                 continue
             }
-            if tmp.lowercaseString.hasPrefix("list:") {
+            if tmp.lowercaseString.hasPrefix("ls:") {
                 key = "list"
                 tmp = ""
             }
@@ -250,11 +296,16 @@ func getSearchXMLDocument(ctx: Context) -> NSXMLDocument? {
     let root = NSXMLElement(name: "items")
     let xml = NSXMLDocument(rootElement: root)
     // Account
-    if ctx.words.count > 0 && "account".hasPrefix(ctx.words.last!) {
-        for account in awReminder.getAllAccounts() {
+
+    let ma = matchRegex("ac:([^ ]*)$", input: ctx.argRaw, options: nil)
+    if ma.count > 0 {
+        let accounts = ctx.argAccount.isEmpty
+            ? awReminder.getAllAccounts()
+            : awReminder.getAccountsByName(ctx.argAccount)
+        for account in accounts {
             let item = NSXMLElement(name: "item")
             item.addAttribute(
-                NSXMLNode.attributeWithName("autocomplete", stringValue: "account:\"\(account.title)\"") as! NSXMLNode
+                NSXMLNode.attributeWithName("autocomplete", stringValue: "ac:\"\(account.title)\"") as! NSXMLNode
             )
             item.addAttribute(
                 NSXMLNode.attributeWithName("valid", stringValue: "no") as! NSXMLNode
@@ -268,24 +319,28 @@ func getSearchXMLDocument(ctx: Context) -> NSXMLDocument? {
         }
     }
     // List
-    if ctx.words.count > 0 && "list".hasPrefix(ctx.words.last!) {
-        for list in awReminder.getAllLists() {
+    let ml = matchRegex("ls:([^ ])*$", input: ctx.argRaw, options: nil)
+    if ml.count > 0 {
+        let lists = ctx.argList.isEmpty
+            ? awReminder.getAllLists()
+            : awReminder.getListsByName(ctx.argList)
+        for list in lists {
             let item = NSXMLElement(name: "item")
             item.addAttribute(
                 NSXMLNode.attributeWithName("arg", stringValue: list.calendarIdentifier) as! NSXMLNode
             )
             var autocomplete: String = ""
             if awReminder.context.account != nil {
-                autocomplete = "account:\"\(awReminder.context.account!.title)\" "
+                autocomplete = "ac:\"\(awReminder.context.account!.title)\" "
             }
-            autocomplete += "list:\"\(list.title)\""
+            autocomplete += "ls:\"\(list.title)\""
             item.addAttribute(
                 NSXMLNode.attributeWithName("autocomplete", stringValue: autocomplete) as! NSXMLNode
             )
-            item.addChild(NSXMLElement(name: "title", stringValue: "\(list.title)  -- \(list.source.title)"))
+            item.addChild(NSXMLElement(name: "title", stringValue: "\(list.title) -- \(list.source.title)"))
             item.addChild(NSXMLElement(
                 name: "subtitle",
-                stringValue: "Open the reminder's list in Reminders.app"))
+                stringValue: "Display reminders of \(list.source.title)'s \(list.title) with Reminders.app"))
             item.addChild(NSXMLElement(name: "icon", stringValue: "images/icon_list.png"))
             root.addChild(item)
         }
@@ -306,7 +361,7 @@ func getSearchXMLDocument(ctx: Context) -> NSXMLDocument? {
             }
             item.addChild(NSXMLElement(
                 name: "subtitle",
-                stringValue: "\(getPriorityLabel(reminder.priority)) \(dueAt)created at \(formatDate(reminder.creationDate!)) in \(reminder.calendar.title)(\(reminder.calendar.source.title))"))
+                stringValue: "\(getPriorityLabel(reminder.priority)) \(dueAt)created at \(formatDate(reminder.creationDate!)) (\(reminder.calendar.source.title) / \(reminder.calendar.title))"))
             item.addChild(NSXMLElement(name: "icon", stringValue: "images/icon_open.png"))
             root.addChild(item)
         }
@@ -315,7 +370,7 @@ func getSearchXMLDocument(ctx: Context) -> NSXMLDocument? {
 }
 
 func getCreationXMLDocument(ctx: Context) -> NSXMLDocument? {
-    if ctx.words.count == 0 || ctx.words[0] == "" {
+    if ctx.words.count == 0 || ctx.words[0] .isEmpty {
         return nil
     }
     let awReminder = AlfredWorkflowReminder(ctx: ctx)
@@ -324,11 +379,14 @@ func getCreationXMLDocument(ctx: Context) -> NSXMLDocument? {
     let item = NSXMLElement(name: "item")
     let list = awReminder.getSelectedList()
     let text = ctx.words.joinWithSeparator(" ")
+    if list == nil {
+        return nil
+    }
     item.addAttribute(
-        NSXMLNode.attributeWithName("arg", stringValue: "\(list.calendarIdentifier) \(text)") as! NSXMLNode
+        NSXMLNode.attributeWithName("arg", stringValue: "\(list!.calendarIdentifier) \(text)") as! NSXMLNode
     )
     item.addChild(NSXMLElement(name: "title", stringValue: text))
-    item.addChild(NSXMLElement(name: "subtitle", stringValue: "Create New Task in \(list.title) (\(list.source.title))"))
+    item.addChild(NSXMLElement(name: "subtitle", stringValue: "Add a reminder to \(list!.source.title)'s \(list!.title)"))
     item.addChild(NSXMLElement(name: "icon", stringValue: "images/icon_add.png"))
     root.addChild(item)
     return xml
