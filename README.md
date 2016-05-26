@@ -3,7 +3,7 @@
 
 You can search (or create) reminders in Reminders.app.
 
-![video](http://www.packal.org/sites/default/files/public/workflow-files/comgithubjimo1001alfred-reminders-workflow/screenshots/screencast.gif)
+![video](http://www.packal.org/sites/default/files/public/workflow-files/comgithubjimo1001alfred-reminders-workflow/screenshots/screencast_1.gif)
 
 ## Installation
 
