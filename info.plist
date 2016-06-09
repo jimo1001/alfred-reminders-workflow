@@ -133,33 +133,11 @@
 				<key>concurrently</key>
 				<true/>
 				<key>escaping</key>
-				<integer>127</integer>
+				<integer>102</integer>
 				<key>script</key>
-				<string>// open reminder
-function run(args) {
-    if (!args || !args[0]) {
-        return;
-    }
-    var query = args[0];
-    var app = Application("Reminders");
-    app.activate();
-    // Reminder
-    if (query.startsWith("x-apple-reminder://")) {
-        app.reminders.byId(query).show();
-        return;
-    }
-    // List
-    Array.prototype.slice.call(app.lists).some(function (list) {
-        if (list.id() === query) {
-            list.show();
-            return true;
-        }
-        return false;
-    });
-}
-</string>
+				<string>osascript -l JavaScript scripts/open.applescript.js "{query}"</string>
 				<key>type</key>
-				<integer>7</integer>
+				<integer>0</integer>
 			</dict>
 			<key>type</key>
 			<string>alfred.workflow.action.script</string>
@@ -201,23 +179,9 @@ function run(args) {
 				<key>escaping</key>
 				<integer>68</integer>
 				<key>script</key>
-				<string>// complete reminder
-function run(args) {
-    if (!args || !args[0]) {
-        return "";
-    }
-    var query = args[0];
-    if (query.startsWith("x-apple-reminder://")) {
-        var app = Application("Reminders");
-        var reminder = app.reminders.byId(query);
-        reminder.completed = true;
-        return reminder.name();
-    }
-    return "";
-}
-</string>
+				<string>osascript -l JavaScript scripts/complete.applescript.js "{query}"</string>
 				<key>type</key>
-				<integer>7</integer>
+				<integer>0</integer>
 			</dict>
 			<key>type</key>
 			<string>alfred.workflow.action.script</string>
@@ -314,7 +278,7 @@ echo $REMINDER_NAME</string>
 				<key>escaping</key>
 				<integer>102</integer>
 				<key>script</key>
-				<string>osascript -l JavaScript -s o scripts/create.applescript "{query}"</string>
+				<string>osascript -l JavaScript scripts/create.applescript.js "{query}"</string>
 				<key>type</key>
 				<integer>0</integer>
 			</dict>
