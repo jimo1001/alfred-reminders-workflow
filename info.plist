@@ -30,11 +30,49 @@
 				<string></string>
 			</dict>
 		</array>
+		<key>6700C64B-6BCA-4A80-8A63-D253E2B408E5</key>
+		<array>
+			<dict>
+				<key>destinationuid</key>
+				<string>A79C1082-0FE0-4C17-859B-4E31F7584973</string>
+				<key>modifiers</key>
+				<integer>0</integer>
+				<key>modifiersubtext</key>
+				<string></string>
+			</dict>
+		</array>
 		<key>8D442CDC-AF96-4516-8A46-46CE55D66820</key>
 		<array>
 			<dict>
 				<key>destinationuid</key>
 				<string>C95E30E6-42A7-4DF5-9C5A-8BD8A9BB6D4F</string>
+				<key>modifiers</key>
+				<integer>0</integer>
+				<key>modifiersubtext</key>
+				<string></string>
+			</dict>
+			<dict>
+				<key>destinationuid</key>
+				<string>6700C64B-6BCA-4A80-8A63-D253E2B408E5</string>
+				<key>modifiers</key>
+				<integer>524288</integer>
+				<key>modifiersubtext</key>
+				<string>Mark as Completed</string>
+			</dict>
+			<dict>
+				<key>destinationuid</key>
+				<string>B688675C-7B44-436E-AA5B-532F420B2A26</string>
+				<key>modifiers</key>
+				<integer>262144</integer>
+				<key>modifiersubtext</key>
+				<string>Start Pomodoro</string>
+			</dict>
+		</array>
+		<key>B688675C-7B44-436E-AA5B-532F420B2A26</key>
+		<array>
+			<dict>
+				<key>destinationuid</key>
+				<string>B6CA9476-C313-4828-A8AE-6CC7818D2244</string>
 				<key>modifiers</key>
 				<integer>0</integer>
 				<key>modifiersubtext</key>
@@ -97,14 +135,174 @@
 				<key>escaping</key>
 				<integer>127</integer>
 				<key>script</key>
-				<string>osascript -l JavaScript -s o scripts/open.applescript "{query}"</string>
+				<string>// open reminder
+function run(args) {
+    if (!args || !args[0]) {
+        return;
+    }
+    var query = args[0];
+    var app = Application("Reminders");
+    app.activate();
+    // Reminder
+    if (query.startsWith("x-apple-reminder://")) {
+        app.reminders.byId(query).show();
+        return;
+    }
+    // List
+    Array.prototype.slice.call(app.lists).some(function (list) {
+        if (list.id() === query) {
+            list.show();
+            return true;
+        }
+        return false;
+    });
+}
+</string>
+				<key>type</key>
+				<integer>7</integer>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.action.script</string>
+			<key>uid</key>
+			<string>C95E30E6-42A7-4DF5-9C5A-8BD8A9BB6D4F</string>
+			<key>version</key>
+			<integer>0</integer>
+		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>lastpathcomponent</key>
+				<false/>
+				<key>onlyshowifquerypopulated</key>
+				<false/>
+				<key>output</key>
+				<integer>0</integer>
+				<key>removeextension</key>
+				<false/>
+				<key>sticky</key>
+				<false/>
+				<key>text</key>
+				<string>{query}</string>
+				<key>title</key>
+				<string>Mark as Completed</string>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.output.notification</string>
+			<key>uid</key>
+			<string>A79C1082-0FE0-4C17-859B-4E31F7584973</string>
+			<key>version</key>
+			<integer>0</integer>
+		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>concurrently</key>
+				<false/>
+				<key>escaping</key>
+				<integer>68</integer>
+				<key>script</key>
+				<string>// complete reminder
+function run(args) {
+    if (!args || !args[0]) {
+        return "";
+    }
+    var query = args[0];
+    if (query.startsWith("x-apple-reminder://")) {
+        var app = Application("Reminders");
+        var reminder = app.reminders.byId(query);
+        reminder.completed = true;
+        return reminder.name();
+    }
+    return "";
+}
+</string>
+				<key>type</key>
+				<integer>7</integer>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.action.script</string>
+			<key>uid</key>
+			<string>6700C64B-6BCA-4A80-8A63-D253E2B408E5</string>
+			<key>version</key>
+			<integer>0</integer>
+		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>lastpathcomponent</key>
+				<false/>
+				<key>onlyshowifquerypopulated</key>
+				<false/>
+				<key>output</key>
+				<integer>0</integer>
+				<key>removeextension</key>
+				<false/>
+				<key>sticky</key>
+				<false/>
+				<key>text</key>
+				<string>{query}</string>
+				<key>title</key>
+				<string>Start Pomodoro</string>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.output.notification</string>
+			<key>uid</key>
+			<string>B6CA9476-C313-4828-A8AE-6CC7818D2244</string>
+			<key>version</key>
+			<integer>0</integer>
+		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>concurrently</key>
+				<false/>
+				<key>escaping</key>
+				<integer>102</integer>
+				<key>script</key>
+				<string>CURRENT_TIME=$(date +%s)
+REMINDER_URI="{query}"
+REMINDER_NAME=$(osascript -lJavaScript &lt;&lt;EOF
+var rid = "$REMINDER_URI";
+if (rid &amp;&amp; rid.startsWith("x-apple-reminder://")) {
+    Application("Reminders").reminders.byId(rid).name();
+}
+EOF
+)
+
+echo "$CURRENT_TIME|1|$REMINDER_URI|$REMINDER_NAME" &gt; $TMPDIR/bitbar-pomodoro
+echo $REMINDER_NAME</string>
 				<key>type</key>
 				<integer>0</integer>
 			</dict>
 			<key>type</key>
 			<string>alfred.workflow.action.script</string>
 			<key>uid</key>
-			<string>C95E30E6-42A7-4DF5-9C5A-8BD8A9BB6D4F</string>
+			<string>B688675C-7B44-436E-AA5B-532F420B2A26</string>
+			<key>version</key>
+			<integer>0</integer>
+		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>lastpathcomponent</key>
+				<false/>
+				<key>onlyshowifquerypopulated</key>
+				<false/>
+				<key>output</key>
+				<integer>0</integer>
+				<key>removeextension</key>
+				<false/>
+				<key>sticky</key>
+				<false/>
+				<key>text</key>
+				<string>{query}</string>
+				<key>title</key>
+				<string>New Reminder Created</string>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.output.notification</string>
+			<key>uid</key>
+			<string>AE937307-9537-46D5-A7F3-173ECCB03754</string>
 			<key>version</key>
 			<integer>0</integer>
 		</dict>
@@ -164,31 +362,6 @@
 			<key>version</key>
 			<integer>0</integer>
 		</dict>
-		<dict>
-			<key>config</key>
-			<dict>
-				<key>lastpathcomponent</key>
-				<false/>
-				<key>onlyshowifquerypopulated</key>
-				<false/>
-				<key>output</key>
-				<integer>0</integer>
-				<key>removeextension</key>
-				<false/>
-				<key>sticky</key>
-				<false/>
-				<key>text</key>
-				<string>{query}</string>
-				<key>title</key>
-				<string>New Reminder Created</string>
-			</dict>
-			<key>type</key>
-			<string>alfred.workflow.output.notification</string>
-			<key>uid</key>
-			<string>AE937307-9537-46D5-A7F3-173ECCB03754</string>
-			<key>version</key>
-			<integer>0</integer>
-		</dict>
 	</array>
 	<key>readme</key>
 	<string>Please see https://github.com/jimo1001/alfred-reminders-workflow</string>
@@ -197,9 +370,14 @@
 		<key>391573B1-198D-4455-A25B-CC9763DF6C18</key>
 		<dict>
 			<key>ypos</key>
-			<real>130</real>
+			<real>400</real>
 		</dict>
 		<key>5A2C92D9-FFDE-4DB2-839B-D66B55168678</key>
+		<dict>
+			<key>ypos</key>
+			<real>400</real>
+		</dict>
+		<key>6700C64B-6BCA-4A80-8A63-D253E2B408E5</key>
 		<dict>
 			<key>ypos</key>
 			<real>130</real>
@@ -209,10 +387,25 @@
 			<key>ypos</key>
 			<real>10</real>
 		</dict>
-		<key>AE937307-9537-46D5-A7F3-173ECCB03754</key>
+		<key>A79C1082-0FE0-4C17-859B-4E31F7584973</key>
 		<dict>
 			<key>ypos</key>
 			<real>130</real>
+		</dict>
+		<key>AE937307-9537-46D5-A7F3-173ECCB03754</key>
+		<dict>
+			<key>ypos</key>
+			<real>400</real>
+		</dict>
+		<key>B688675C-7B44-436E-AA5B-532F420B2A26</key>
+		<dict>
+			<key>ypos</key>
+			<real>250</real>
+		</dict>
+		<key>B6CA9476-C313-4828-A8AE-6CC7818D2244</key>
+		<dict>
+			<key>ypos</key>
+			<real>250</real>
 		</dict>
 		<key>C95E30E6-42A7-4DF5-9C5A-8BD8A9BB6D4F</key>
 		<dict>

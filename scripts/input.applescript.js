@@ -228,7 +228,7 @@ function create(app, context) {
 }
 
 function run(args) {
-    if (args.length != 2 || !args[1]) {
+    if (!args || args.length != 2 || !args[1]) {
         return usage();
     }
     var context = parseArgs(args);

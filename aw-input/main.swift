@@ -362,7 +362,7 @@ func getSearchXMLDocument(ctx: Context) -> NSXMLDocument? {
             item.addChild(NSXMLElement(
                 name: "subtitle",
                 stringValue: "\(getPriorityLabel(reminder.priority)) \(dueAt)created at \(formatDate(reminder.creationDate!)) (\(reminder.calendar.source.title) / \(reminder.calendar.title))"))
-            item.addChild(NSXMLElement(name: "icon", stringValue: "images/icon_open.png"))
+            item.addChild(NSXMLElement(name: "icon", stringValue: "images/icon.png"))
             root.addChild(item)
         }
     }
