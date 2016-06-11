@@ -1,0 +1,3 @@
+[submodule "ext/bitbar-pomodoro"]
+	path = ext/bitbar-pomodoro
+	url = https://github.com/jimo1001/bitbar-pomodoro.git
